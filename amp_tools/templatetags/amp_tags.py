@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from collections import OrderedDict
+
 from django import template
 from django.contrib.sites.models import Site
 from django.http import QueryDict
@@ -7,6 +9,7 @@ from django.utils.safestring import mark_safe
 from django.utils.encoding import force_text
 from django.template import Library, Node, Variable
 from django.template.defaultfilters import stringfilter
+from six.moves.urllib.parse import urlencode
 
 register = template.Library()
 
@@ -15,16 +18,17 @@ from amp_tools.settings import settings
 
 @register.simple_tag
 def amp_canonical_link(request):
-    getvars = request.GET.copy()
+    getvars = OrderedDict(request.GET.copy().items())
     rel = "amphtml"
     if settings.AMP_TOOLS_GET_PARAMETER in getvars:
         del getvars[settings.AMP_TOOLS_GET_PARAMETER]
         rel = "canonical"
     else:
         getvars[settings.AMP_TOOLS_GET_PARAMETER] = settings.AMP_TOOLS_GET_VALUE
+        getvars.move_to_end(settings.AMP_TOOLS_GET_PARAMETER, last=False)
 
     if len(getvars.keys()) > 0:
-        getvars = getvars.urlencode()
+        getvars = urlencode(getvars)
     else:
         getvars = ''
 
